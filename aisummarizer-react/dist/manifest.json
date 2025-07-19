@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "AISummarizer Extension",
+  "version": "1.0",
+  "description": "Summarize documents and images using AI",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://localhost:8080/*"]
+}
