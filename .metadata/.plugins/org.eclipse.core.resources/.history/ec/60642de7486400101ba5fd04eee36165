@@ -1,0 +1,13 @@
+package com.app.asiummarizer;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class AsiummarizerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(AsiummarizerApplication.class, args);
+	}
+
+}

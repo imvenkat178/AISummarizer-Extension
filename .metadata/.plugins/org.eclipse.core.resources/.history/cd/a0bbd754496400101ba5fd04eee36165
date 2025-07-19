@@ -1,0 +1,5 @@
+package com.app.aisummarizer.controller;
+
+public class SummarizerController {
+
+}

@@ -1,0 +1,71 @@
+package com.app.aisummarizer.service;
+
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+@Service
+public class HuggingFaceSummarizerService {
+
+    private static final String API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn";
+    private static final String API_TOKEN = "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"; // 🔐 Replace this with your actual Hugging Face token
+
+    public String summarize(String inputText) {
+        try {
+            // Escape all control characters properly for JSON
+            String escapedText = inputText
+                    .replace("\\", "\\\\")   // Escape backslashes
+                    .replace("\"", "\\\"")   // Escape quotes
+                    .replace("\n", "\\n")    // Escape newlines
+                    .replace("\r", "")       // Remove carriage returns
+                    .replace("\t", "\\t");   // Escape tabs
+
+            String requestBody = "{ \"inputs\": \"" + escapedText + "\" }";
+            System.out.println("🧾 Request JSON:\n" + requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .header("Authorization", "Bearer " + API_TOKEN)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            String raw = response.body();
+            System.out.println("🔁 Hugging Face raw response:\n" + raw);
+
+            return extractSummaryFromJson(raw);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "❌ Hugging Face API failed: " + e.getMessage();
+        }
+    }
+
+    private String extractSummaryFromJson(String json) {
+        try {
+            if (json.contains("\"error\"")) {
+                return "Hugging Face API error: " + json;
+            }
+
+            // Expected response: [{ "summary_text": "..." }]
+            int textIndex = json.indexOf("\"summary_text\":");
+            if (textIndex == -1) return "No summary extracted.";
+
+            int start = json.indexOf("\"", textIndex + 15) + 1;
+            int end = json.indexOf("\"", start);
+            if (start <= 0 || end <= start) return "No summary extracted.";
+
+            return json.substring(start, end).replace("\\n", "\n");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "❌ Failed to extract summary.";
+        }
+    }
+}

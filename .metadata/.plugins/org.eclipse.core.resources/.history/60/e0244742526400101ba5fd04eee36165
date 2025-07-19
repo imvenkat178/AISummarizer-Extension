@@ -1,0 +1,5 @@
+package com.app.aisummarizer.service;
+
+public class GeminiSummarizerService {
+
+}

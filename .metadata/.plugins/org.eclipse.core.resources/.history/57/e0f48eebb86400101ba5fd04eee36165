@@ -1,0 +1,75 @@
+package com.app.aisummarizer.service;
+
+import org.springframework.stereotype.Service;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+@Service
+public class GeminiSummarizerService {
+//	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
+
+    private static final String API_KEY = "";  // Replace with your actual key
+    private static final String API_URL =
+        "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + API_KEY;
+
+    public String summarize(String inputText) {
+        try {
+            String prompt = "Summarize this resume:\n\n" + inputText;
+
+            String requestBody = "{\n" +
+                "  \"contents\": [\n" +
+                "    {\n" +
+                "      \"role\": \"user\",\n" +
+                "      \"parts\": [\n" +
+                "        { \"text\": \"" + prompt.replace("\"", "\\\"") + "\" }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            String raw = response.body();
+            System.out.println("🔁 Gemini API raw response:\n" + raw);
+            System.out.println("📡 Status Code: " + response.statusCode());
+
+            String summary = extractSummaryFromJson(raw);
+            return summary.contains("No summary") ? "RAW: " + raw : summary;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "❌ Gemini API failed: " + e.getMessage();
+        }
+    }
+
+    private String extractSummaryFromJson(String json) {
+        try {
+            if (json.contains("\"error\"")) {
+                return "Gemini API error: " + json;
+            }
+
+            int textIndex = json.indexOf("\"text\":");
+            if (textIndex == -1) return "No summary found in response.";
+
+            int start = json.indexOf("\"", textIndex + 7) + 1;
+            int end = json.indexOf("\"", start);
+            if (start <= 0 || end <= start) return "No summary extracted.";
+
+            return json.substring(start, end).replace("\\n", "\n");
+
+        } catch (Exception e) {
+            System.out.println("Failed to parse summary from JSON:");
+            e.printStackTrace();
+            return "Failed to extract summary.";
+        }
+    }
+}

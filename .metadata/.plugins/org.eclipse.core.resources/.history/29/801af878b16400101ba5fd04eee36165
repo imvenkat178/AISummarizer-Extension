@@ -1,0 +1,47 @@
+package com.app.aisummarizer.service;
+
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+@Service
+public class HuggingFaceSummarizerService {
+
+    private static final String API_TOKEN = "hf_your_token_here"; // Replace with your token
+    private static final String MODEL = "facebook/bart-large-cnn";
+
+    public String summarize(String inputText) {
+        try {
+            String endpoint = "https://api-inference.huggingface.co/models/" + MODEL;
+            String requestBody = "{ \"inputs\": \"" + inputText.replace("\"", "\\\"") + "\" }";
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(endpoint))
+                    .header("Authorization", "Bearer " + API_TOKEN)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return extractSummaryFromJson(response.body());
+
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    private String extractSummaryFromJson(String json) {
+        try {
+            int start = json.indexOf("summary_text") + 15;
+            int end = json.indexOf("\"", start);
+            return json.substring(start, end);
+        } catch (Exception e) {
+            return "Failed to extract summary.";
+        }
+    }
+}

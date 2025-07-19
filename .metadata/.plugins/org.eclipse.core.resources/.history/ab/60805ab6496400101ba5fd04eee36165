@@ -1,0 +1,5 @@
+package com.app.aisummarizer.util;
+
+public class TextExtractor {
+
+}
